@@ -3,11 +3,13 @@
 
 const ReportsRepository = require('../reports/reports.repository');
 const UserRepository = require('../reports/user.repository');
+const ReputationService = require('./reputationService');
 
 class ReportsService {
   constructor(reportsRepository, userRepository) {
     this.reportsRepository = reportsRepository;
     this.userRepository = userRepository;
+    this.reputationService = new ReputationService(userRepository, reportsRepository);
   }
 
   /**
@@ -253,9 +255,10 @@ class ReportsService {
     }
 
     // Check if report should be auto-confirmed or auto-false based on thresholds
-    await this.checkReportStatus(autoReportId);
+    await this.checkReportStatus(reportId);
 
     return interaction;
+  }
   }
 
   /**
@@ -318,56 +321,17 @@ class ReportsService {
    * @param {string} moderatorId - Moderator's UUID
    * @param {string} resolution - Resolution ('confirmed', 'false', 'inconclusive')
    * @param {string} notes - Moderator notes
-   * @returns {Object} - Updated report
+   * @returns {Object} - Updated report with reputation info
    * @throws {Error} - If validation fails
    */
   async resolveFlaggedReport(reportId, moderatorId, resolution, notes = '') {
-    // Validate report exists and is flagged
-    const report = await this.reportsRepository.findById(reportId);
-    if (!report) {
-      throw new Error('Report not found');
-    }
-    if (report.status !== 'flagged') {
-      throw new Error('Report is not flagged for moderation');
-    }
-
-    // Validate moderator exists and is moderator/admin
-    const moderator = await this.userRepository.findById(moderatorId);
-    if (!moderator) {
-      throw new Error('Moderator not found');
-    }
-    if (moderator.role !== 'moderator' && moderator.role !== 'admin') {
-      throw new Error('Not authorized to moderate reports');
-    }
-
-    // Validate resolution
-    const validResolutions = ['confirmed', 'false', 'inconclusive'];
-    if (!validResolutions.includes(resolution)) {
-      throw new Error('Invalid resolution');
-    }
-
-    // Update report
-    const updates = {
-      status: resolution,
-      resolved_by: moderatorId,
-      resolved_at: new Date(),
-      resolution_notes: notes
-    };
-
-    const updatedReport = await this.reportsRepository.update(reportId, updates);
-
-    // Update reporter's stats based on resolution
-    if (resolution === 'confirmed') {
-      await this.userRepository.incrementReportCount(report.reporter_id, 'confirmed');
-    } else if (resolution === 'false') {
-      await this.userRepository.incrementReportCount(report.reporter_id, 'false');
-    }
-
-    // Create moderation action record
-    // Note: In a full implementation, we would insert into moderation_actions table
-    // For now, we'll rely on the report's resolved_by and resolution_notes fields
-
-    return updatedReport;
+    // Use reputation service to handle the resolution atomically
+    return await this.reputationService.applyModerationResolution(
+      reportId,
+      moderatorId,
+      resolution,
+      notes
+    );
   }
 }
 

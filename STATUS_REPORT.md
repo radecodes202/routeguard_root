@@ -53,13 +53,17 @@
 - [x] Implement Hazard map + 5km detection (Feature 3) - Hard
 - [x] Implement Push notifications, 500m alert (Feature 4) - Hard
 - [x] Implement OSRM routing & rerouting (Feature 5) - Hard
-- [ ] Implement Tag-based reporting <10s (Feature 6) - Easy-Medium
+- [x] Implement Tag-based reporting <10s (Feature 6) - Easy-Medium
   - [x] Implement tag-based reporting API endpoint
   - [x] Integrate tag-based reporting with LocationManager
   - [x] Implement location permission handling for reporting
   - [x] Implement optional photo attachment for reports
   - [x] Implement debounce logic to prevent duplicate reports
+- [ ] Implement Feature 7: Reputation scoring (SO3) - Medium
+  - [x] Create reputation service with computeReputationDelta function
+  - [ ] Integrate with moderation resolution endpoint
+  - [ ] Implement voting accuracy adjustments for confirm/deny actions
 - [ ] Continue with remaining features in recommended order (Section 14)
 
 ## Current Focus
-Completed authentication system, Android auth UI, reports CRUD functionality, Hazard map + 5km detection (Feature 3), Push notifications, 500m alert (Feature 4), OSRM routing & rerouting (Feature 5), and Tag-based reporting <10s (Feature 6) including debounce logic. Implementation complete for Features 1-6.
+Completed authentication system, Android auth UI, reports CRUD functionality, Hazard map + 5km detection (Feature 3), Push notifications, 500m alert (Feature 4), OSRM routing & rerouting (Feature 5), and Tag-based reporting <10s (Feature 6) including debounce logic. Currently implementing Feature 7: Reputation scoring (SO3).
