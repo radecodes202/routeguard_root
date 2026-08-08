@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import java.util.Date
 import javax.inject.Inject
 
 /**
@@ -42,9 +43,18 @@ class ReportViewModel @Inject constructor(
     private val _reportResult = MutableStateFlow<ReportResult?>(null)
     val reportResult: StateFlow<ReportResult?> = _reportResult.asStateFlow()
 
+    // Debounce tracking to prevent duplicate reports
+    private val _lastReportTime = MutableStateFlow<Long>(0)
+    val lastReportTime: StateFlow<Long> = _lastReportTime.asStateFlow()
+
+    // Debounce delay in milliseconds (10 seconds to prevent duplicate reports)
+    private val DEBOUNCE_DELAY_MS = 10000L
+
     init {
         // Check authentication status on init
         checkAuthStatus()
+        // Initialize last report time to allow immediate first report
+        _lastReportTime.value = 0
     }
 
     private fun checkAuthStatus() {
@@ -97,6 +107,15 @@ class ReportViewModel @Inject constructor(
             return
         }
 
+        // Check debounce - prevent duplicate reports within DEBOUNCE_DELAY_MS
+        val currentTime = System.currentTimeMillis()
+        val lastReportTimestamp = _lastReportTime.value
+        if (currentTime - lastReportTimestamp < DEBOUNCE_DELAY_MS) {
+            val remainingTime = (DEBOUNCE_DELAY_MS - (currentTime - lastReportTimestamp)) / 1000
+            _uiState.value = ReportUiState.Error("Please wait $remainingTime seconds before submitting another report")
+            return
+        }
+
         _uiState.value = ReportUiState.Submitting
 
         viewModelScope.launch {
@@ -116,6 +135,8 @@ class ReportViewModel @Inject constructor(
             )
 
             if (response.success) {
+                // Update last report time for debounce
+                _lastReportTime.value = System.currentTimeMillis()
                 _uiState.value = ReportUiState.Success
                 _reportResult.value = ReportResult.Success(response.data?.reports?.firstOrNull() ?:
                     com.routeguard.android.data.remote.dto.HazardReportResponse.HazardReportData.HazardReport(
@@ -166,6 +187,9 @@ class ReportViewModel @Inject constructor(
         _selectedTag.value = null
         _mediaUri.value = null
         _reportResult.value = null
+        // Optionally reset debounce timer when manually resetting
+        // Commenting out to maintain debounce across resets for better UX
+        // _lastReportTime.value = 0
     }
 
     // UI State Sealed Class
