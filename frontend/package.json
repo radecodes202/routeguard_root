@@ -1,0 +1,32 @@
+{
+  "name": "routeguard-admin-dashboard",
+  "version": "1.0.0",
+  "description": "RouteGuard Administrative Web Dashboard",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.0",
+    "@heroicons/react": "^2.0.0",
+    "@tanstack/react-query": "^4.0.0",
+    "date-fns": "^2.29.0",
+    "maplibre-gl": "^3.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.41.0",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^6.8.0",
+    "recharts": "^2.5.0",
+    "zod": "^3.20.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^3.0.0",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.2.4",
+    "vite": "^4.0.0"
+  }
+}
