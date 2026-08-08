@@ -480,6 +480,166 @@ class ReportsController {
       }
     }
   }
+
+  /**
+   * Confirm a report
+   * POST /api/v1/reports/:id/confirm
+   */
+  async confirmReport(req, res) {
+    try {
+      const reportId = req.params.id;
+      const userId = req.user.id; // From auth middleware
+
+      // Get the report to confirm
+      const report = await this.reportsService.getReportById(reportId);
+
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'Report not found'
+          }
+        });
+      }
+
+      // Get the user to check reputation
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'User not found'
+          }
+        });
+      }
+
+      if (!user.is_active) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'User is not active'
+          }
+        });
+      }
+
+      // Add the confirmation interaction
+      const interactionData = {
+        report_id: reportId,
+        user_id: userId,
+        action: 'confirm'
+      };
+
+      const interaction = await this.reportsService.addReportInteraction(interactionData);
+
+      // Get updated report
+      const updatedReport = await this.reportsService.getReportById(reportId);
+
+      res.status(200).json({
+        success: true,
+        data: updatedReport
+      });
+    } catch (error) {
+      // Handle validation errors
+      if (error.message === 'Report not found' ||
+          error.message === 'User not found' ||
+          error.message === 'User is not active' ||
+          error.message.includes('Invalid')) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            message: error.message
+          }
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: {
+            message: 'Internal server error'
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Deny a report
+   * POST /api/v1/reports/:id/deny
+   */
+  async denyReport(req, res) {
+    try {
+      const reportId = req.params.id;
+      const userId = req.user.id; // From auth middleware
+
+      // Get the report to deny
+      const report = await this.reportsService.getReportById(reportId);
+
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'Report not found'
+          }
+        });
+      }
+
+      // Get the user to check reputation
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'User not found'
+          }
+        });
+      }
+
+      if (!user.is_active) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'User is not active'
+          }
+        });
+      }
+
+      // Add the denial interaction
+      const interactionData = {
+        report_id: reportId,
+        user_id: userId,
+        action: 'deny'
+      };
+
+      const interaction = await this.reportsService.addReportInteraction(interactionData);
+
+      // Get updated report
+      const updatedReport = await this.reportsService.getReportById(reportId);
+
+      res.status(200).json({
+        success: true,
+        data: updatedReport
+      });
+    } catch (error) {
+      // Handle validation errors
+      if (error.message === 'Report not found' ||
+          error.message === 'User not found' ||
+          error.message === 'User is not active' ||
+          error.message.includes('Invalid')) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            message: error.message
+          }
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: {
+            message: 'Internal server error'
+          }
+        });
+      }
+    }
+  }
 }
 
 module.exports = ReportsController;

@@ -2,11 +2,15 @@
 // Authentication business logic
 
 const TokenUtils = require('../utils/tokens');
+const { Pool } = require('pg');
 
 class AuthService {
-  constructor(userRepository, refreshTokenRepository) {
+  constructor(userRepository, refreshTokenRepository, pool) {
     this.userRepository = userRepository;
     this.refreshTokenRepository = refreshTokenRepository;
+    this.pool = pool;
+    this.emailVerificationRepository = new EmailVerificationRepository(pool);
+    this.passwordResetRepository = new PasswordResetRepository(pool);
   }
 
   /**

@@ -182,15 +182,37 @@ class AuthController {
         });
       }
 
-      // In a full implementation, we would verify the token here
-      // For now, we'll just update the user based on the token
-      // This is a simplified version - in production you would:
-      // 1. Verify the token is valid and not expired
-      // 2. Extract user ID from the token
-      // 3. Update the user's email_verified_at field
+      // Hash the token for lookup
+      const hashedToken = TokenUtils.hashVerificationToken(token);
 
-      // For this implementation, we'll assume the token contains the user ID
-      // and just update the user (this is not secure - just for demonstration)
+      // Find the verification token
+      const verificationToken = await this.authService.emailVerificationRepository.findByToken(hashedToken);
+      if (!verificationToken) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            message: 'Invalid or expired verification token'
+          }
+        });
+      }
+
+      // Get the user
+      const user = await this.authService.userRepository.findById(verificationToken.user_id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'User not found'
+          }
+        });
+      }
+
+      // Update user's email verification timestamp
+      await this.authService.userRepository.verifyEmail(user.id);
+
+      // Consume the token (delete it so it can't be reused)
+      await this.authService.emailVerificationRepository.consume(verificationToken.id);
+
       res.status(200).json({
         success: true,
         data: {
@@ -262,13 +284,42 @@ class AuthController {
         });
       }
 
-      // In a full implementation, we would:
-      // 1. Verify the reset token is valid and not expired
-      // 2. Extract user ID from the token
-      // 3. Hash the new password
-      // 4. Update the user's password
-      // 5. Revoke all refresh tokens for the user (as specified)
-      // 6. Invalidate the reset token
+      // Hash the token for lookup
+      const hashedToken = TokenUtils.hashVerificationToken(token);
+
+      // Find the reset token
+      const resetToken = await this.authService.passwordResetRepository.findByToken(hashedToken);
+      if (!resetToken) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            message: 'Invalid or expired reset token'
+          }
+        });
+      }
+
+      // Get the user
+      const user = await this.authService.userRepository.findById(resetToken.user_id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'User not found'
+          }
+        });
+      }
+
+      // Hash the new password
+      const hashedPassword = await TokenUtils.hashPassword(newPassword);
+
+      // Update user's password
+      await this.authService.userRepository.update(user.id, { password_hash: hashedPassword });
+
+      // Revoke all refresh tokens for the user (logout everywhere as specified)
+      await this.authService.refreshTokenRepository.revokeAllByUser(user.id);
+
+      // Consume the reset token (delete it so it can't be reused)
+      await this.authService.passwordResetRepository.consume(resetToken.id);
 
       res.status(200).json({
         success: true,

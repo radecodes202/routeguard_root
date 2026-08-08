@@ -26,7 +26,7 @@ const reportsRepository = new ReportsRepository(pool);
 const AuthService = require('./src/services/auth.service');
 const ReportsService = require('./src/services/reports.service');
 const RouteService = require('./src/services/routeService');
-const authService = new AuthService(userRepository, refreshTokenRepository);
+const authService = new AuthService(userRepository, refreshTokenRepository, pool);
 const reportsService = new ReportsService(reportsRepository, userRepository);
 const routeService = new RouteService();
 
@@ -83,8 +83,56 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Initialize Socket.IO with secure CORS configuration
+const { Server } = require('socket.io');
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ["http://localhost:3000", "http://127.0.0.1:3000"]; // Default for development
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+// Make io accessible to our modules
+app.set('io', io);
+
+// Set up decay sweep job to run every 5 minutes
+const { runDecaySweepJob } = require('./src/jobs/decaySweepJob');
+
+// Run decay sweep job every 5 minutes
+setInterval(async () => {
+  try {
+    await runDecaySweepJob(pool, io);
+  } catch (error) {
+    console.error('[Decay Sweep] Error in scheduled job:', error);
+  }
+}, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+// Also run it once on startup
+runDecaySweepJob(pool, io).catch(console.error);
+
+// Make io available to hazard channel
+const { HazardChannel } = require('./src/sockets/hazardChannel');
+const hazardChannel = new HazardChannel(io, reportsRepository);
+
+// Handle socket connections
+io.on('connection', (socket) => {
+  console.log('User connected to socket.io');
+
+  // Handle hazard channel connection
+  hazardChannel.handleConnection(socket);
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected from socket.io');
+  });
 });
 
 module.exports = app;

@@ -10,6 +10,7 @@ class ReportsService {
     this.reportsRepository = reportsRepository;
     this.userRepository = userRepository;
     this.reputationService = new ReputationService(userRepository, reportsRepository);
+    this.confidenceDecayService = new ConfidenceDecayService(reportsRepository.pool);
   }
 
   /**
@@ -245,6 +246,12 @@ class ReportsService {
 
       // Update reporter's confirmed count
       await this.userRepository.incrementReportCount(report.reporter_id, 'confirmed');
+
+      // Apply confirm bonus to confidence score
+      const updatedReport = this.confidenceDecayService.applyConfirm(report, user.reputation_score);
+      await this.reportsRepository.update(report_id, {
+        confidence_score: updatedReport.confidence_score
+      });
     } else if (action === 'deny') {
       await this.reportsRepository.update(report_id, {
         deny_count: report.deny_count + 1
@@ -252,22 +259,27 @@ class ReportsService {
 
       // Update reporter's false count
       await this.userRepository.incrementReportCount(report.reporter_id, 'false');
+
+      // Apply deny penalty to confidence score
+      const updatedReport = this.confidenceDecayService.applyDeny(report, user.reputation_score);
+      await this.reportsRepository.update(report_id, {
+        confidence_score: updatedReport.confidence_score
+      });
     }
 
     // Check if report should be auto-confirmed or auto-false based on thresholds
-    await this.checkReportStatus(reportId);
+    await this.checkReportStatus(report_id);
 
     return interaction;
-  }
   }
 
   /**
    * Check if report status should be updated based on confirmation/denial ratios
-   * @param {string} reportId - Report's UUID
+   * @param {string} report_id - Report's UUID
    * @returns {Promise<void>}
    */
-  async checkReportStatus(reportId) {
-    const report = await this.reportsRepository.findById(reportId);
+  async checkReportStatus(report_id) {
+    const report = await this.reportsRepository.findById(report_id);
     if (!report) return;
 
     const totalInteractions = report.confirm_count + report.deny_count;
@@ -279,14 +291,14 @@ class ReportsService {
 
       // Auto-confirm if >= 60% confirmations and at least 3 confirms
       if (confirmationRatio >= 0.6 && report.confirm_count >= 3) {
-        await this.reportsRepository.update(reportId, {
+        await this.reportsRepository.update(report_id, {
           status: 'confirmed',
           resolved_at: new Date()
         });
       }
       // Auto-false if >= 60% denials and at least 3 denials
       else if (denialRatio >= 0.6 && report.deny_count >= 3) {
-        await this.reportsRepository.update(reportId, {
+        await this.reportsRepository.update(report_id, {
           status: 'false',
           resolved_at: new Date()
         });

@@ -41,9 +41,28 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+/**
+ * Generate a random token for email verification or password reset
+ * @returns {string} - Random token
+ */
+function generateVerificationToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Hash a verification token for storage
+ * @param {string} token - Plain token
+ * @returns {string} - Hashed token
+ */
+function hashVerificationToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 module.exports = {
   hashPassword,
   comparePassword,
   generateToken,
-  hashToken
+  hashToken,
+  generateVerificationToken,
+  hashVerificationToken
 };

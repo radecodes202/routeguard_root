@@ -48,6 +48,18 @@ router.delete('/:id', reportsController.deleteReport.bind(reportsController));
 // Add interaction to report
 router.post('/:id/interactions', reportsController.addInteraction.bind(reportsController));
 
+// Confirm a report (authenticated users)
+router.post(
+  '/:id/confirm',
+  reportsController.confirmReport.bind(reportsController)
+);
+
+// Deny a report (authenticated users)
+router.post(
+  '/:id/deny',
+  reportsController.denyReport.bind(reportsController)
+);
+
 // Moderator-only routes
 const { requireRole } = require('../middleware/auth.middleware');
 

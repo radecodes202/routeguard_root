@@ -63,13 +63,13 @@
   - [x] Create reputation service with computeReputationDelta function
   - [x] Integrate with moderation resolution endpoint
   - [x] Implement voting accuracy adjustments for confirm/deny actions
-- [ ] Implement Feature 8: Confidence decay + confirm/deny mechanism - Hard
-  - [ ] Create confidence decay service with hourly decay rates per category
-  - [ ] Create scheduled decay sweep job (every 5 minutes)
-  - [ ] Extend report controller with POST /reports/:id/confirm and /deny endpoints
-  - [ ] Modify report submission service to initialize confidence_score=100
-  - [ ] Update hazard channel to broadcast hazard:updated events on confidence-driven status changes
+- [x] Implement Feature 8: Confidence decay + confirm/deny mechanism - Hard
+  - [x] Create confidence decay service with hourly decay rates per category
+  - [x] Create scheduled decay sweep job (every 5 minutes)
+  - [x] Extend report controller with POST /reports/:id/confirm and /deny endpoints
+  - [x] Modify report submission service to initialize confidence_score=100
+  - [x] Update hazard channel to broadcast hazard:updated events on confidence-driven status changes
 - [ ] Continue with remaining features in recommended order (Section 14)
 
 ## Current Focus
-Completed authentication system, Android auth UI, reports CRUD functionality, Hazard map + 5km detection (Feature 3), Push notifications, 500m alert (Feature 4), OSRM routing & rerouting (Feature 5), and Tag-based reporting <10s (Feature 6) including debounce logic. Completed Feature 7: Reputation scoring (SO3) and addressed security review in authentication endpoints. Now starting Feature 8: Confidence decay + confirm/deny mechanism.
+Completed authentication system, Android auth UI, reports CRUD functionality, Hazard map + 5km detection (Feature 3), Push notifications, 500m alert (Feature 4), OSRM routing & rerouting (Feature 5), and Tag-based reporting <10s (Feature 6) including debounce logic. Completed Feature 7: Reputation scoring (SO3) and addressed security review in authentication endpoints. Completed Feature 8: Confidence decay + confirm/deny mechanism.
