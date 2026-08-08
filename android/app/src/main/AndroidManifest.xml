@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.routeguard.android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RouteGuard">
+
+        <!-- Hazard Alert Service -->
+        <service
+            android:name=".notifications.HazardAlertService"
+            android:exported="false"
+            android:foregroundServiceType="location"/>
+
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name=".notifications.FcmMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Hazard Alert Dismiss Receiver -->
+        <receiver
+            android:name=".notifications.HazardAlertDismissReceiver"
+            android:exported="false"/>
+
+    </application>
+
+</manifest>

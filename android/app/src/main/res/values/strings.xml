@@ -1,0 +1,38 @@
+<resources>
+    <!-- App name -->
+    <string name="app_name">RouteGuard</string>
+
+    <!-- Generic actions -->
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="login">Login</string
+    <string name="report">Report</string>
+    <string name="retry">Retry</string>
+
+    <!-- Reporting strings -->
+    <string name="report_obstacle">Report Obstacle</string>
+    <string name="select_hazard_type">Select Hazard Type</string>
+    <string name="add_optional_details">Add Optional Details</string>
+    <string name="describe_hazard_if_needed">Describe hazard if needed</string>
+    <string name="report_submitted_successfully">Report Submitted Successfully</string>
+    <string name="thank_you_for_helping_keep_roads_safe">Thank you for helping keep roads safe!</string>
+    <string name="please_login_to_report">Please login to report hazards</string>
+    <string name="location_permission_required">Location Permission Required</string>
+    <string name="location_permission_explanation">We need your location to accurately report hazards near you.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="attach_image">Attach Image</string>
+    <string name="selected_image">Selected Image</string>
+
+    <!-- Map screen strings -->
+    <string name="nearby_hazards">Nearby Hazards</string>
+    <string name="km_away">km away</string>
+
+    <!-- Existing strings from fragments (to maintain compatibility) -->
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="label_remember_me">Remember me</string>
+    <string name="label_forgot_password">Forgot password?</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="action_register">Register</string>
+    <string name="content_description_toggle_password">Toggle password visibility</string>
+</resources>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_nav_graph"
+    app:startDestination="@id/loginScreen">
+
+    <fragment
+        android:id="@+id/loginScreen"
+        android:name="com.routeguard.android.auth.ui.LoginScreen"
+        android:label="fragment_login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginScreen_to_registerScreen"
+            app:destination="@id/registerScreen" />
+        <action
+            android:id="@+id/action_loginScreen_to_forgotPasswordScreen"
+            app:destination="@id/forgotPasswordScreen" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerScreen"
+        android:name="com.routeguard.android.auth.ui.RegisterScreen"
+        android:label="fragment_register"
+        tools:layout="@layout/fragment_register">
+        <action
+            android:id="@+id/action_registerScreen_to_loginScreen"
+            app:destination="@id/loginScreen" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/forgotPasswordScreen"
+        android:name="com.routeguard.android.auth.ui.ForgotPasswordScreen"
+        android:label="fragment_forgot_password"
+        tools:layout="@layout/fragment_forgot_password">
+        <action
+            android:id="@+id/action_forgotPasswordScreen_to_loginScreen"
+            app:destination="@id/loginScreen" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/resetPasswordScreen"
+        android:name="com.routeguard.android.auth.ui.ResetPasswordScreen"
+        android:label="fragment_reset_password"
+        tools:layout="@layout/fragment_reset_password">
+        <action
+            android:id="@+id/action_resetPasswordScreen_to_loginScreen"
+            app:destination="@id/loginScreen" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/verifyEmailScreen"
+        android:name="com.routeguard.android.auth.ui.VerifyEmailScreen"
+        android:label="fragment_verify_email"
+        tools:layout="@layout/fragment_verify_email">
+        <action
+            android:id="@+id/action_verifyEmailScreen_to_loginScreen"
+            app:destination="@id/loginScreen" />
+    </fragment>
+</navigation>
