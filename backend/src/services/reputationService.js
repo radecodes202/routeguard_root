@@ -2,7 +2,7 @@
 // Reputation scoring business logic
 
 const UserRepository = require('../repositories/user.repository');
-const ReportsRepository = require('../reports/reports.repository');
+const ReportsRepository = require('../repositories/reports.repository');
 
 class ReputationService {
   constructor(userRepository, reportsRepository) {
@@ -100,7 +100,7 @@ class ReputationService {
       }
       const reporter = reporterResult.rows[0];
 
-      // Validate moderator exists and is moderator/admin
+      // Validate moderator exists and is moderator/admin or mio_staff
       const moderatorResult = await client.query(
         'SELECT * FROM users WHERE id = $1',
         [moderatorId]
@@ -111,7 +111,7 @@ class ReputationService {
       }
       const moderator = moderatorResult.rows[0];
 
-      if (moderator.role !== 'moderator' && moderator.role !== 'admin') {
+      if (moderator.role !== 'moderator' && moderator.role !== 'admin' && moderator.role !== 'mio_staff') {
         throw new Error('Not authorized to moderate reports');
       }
 
@@ -146,6 +146,30 @@ class ReputationService {
            gen_random_uuid(), $1, $2, $3, $4, $5
          )`,
         [reportId, moderatorId, resolution, reputationDelta, notes]
+      );
+
+      // Insert audit log entry for BR-13 compliance
+      await client.query(
+        `INSERT INTO audit_logs (
+           actor_id, action, entity_type, entity_id, metadata, ip_address
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6
+         )`,
+        [
+          moderatorId,
+          `RESOLVE_REPORT_${resolution.toUpperCase()}`,
+          'HAZARD_REPORT',
+          reportId,
+          JSON.stringify({
+            resolution,
+            notes,
+            reputationDelta,
+            previousStatus: report.status,
+            newStatus: resolution,
+            reporterId: report.reporter_id
+          }),
+          null // IP address - could be extracted from request in controller if needed
+        ]
       );
 
       // Update reporter's reputation score

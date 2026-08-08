@@ -387,9 +387,9 @@ class ReportsController {
    */
   async getFlaggedReports(req, res) {
     try {
-      // Check if user is moderator or admin
+      // Check if user is moderator, admin, or MIO staff
       const user = req.user;
-      if (user.role !== 'moderator' && user.role !== 'admin') {
+      if (user.role !== 'moderator' && user.role !== 'admin' && user.role !== 'mio_staff') {
         return res.status(403).json({
           success: false,
           error: {
@@ -433,9 +433,9 @@ class ReportsController {
       const reportId = req.params.id;
       const moderatorId = req.user.id; // From auth middleware
 
-      // Check if user is moderator or admin
+      // Check if user is moderator, admin, or MIO staff
       const user = req.user;
-      if (user.role !== 'moderator' && user.role !== 'admin') {
+      if (user.role !== 'moderator' && user.role !== 'admin' && user.role !== 'mio_staff') {
         return res.status(403).json({
           success: false,
           error: {

@@ -3,10 +3,23 @@
 
 const express = require('express');
 const { Pool } = require('pg');
+const cors = require('cors');
 require('dotenv').config();
 
 // Initialize Express app
 const app = express();
+
+// Configure CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Database connection pool
@@ -25,34 +38,52 @@ const reportsRepository = new ReportsRepository(pool);
 // Initialize services
 const AuthService = require('./src/services/auth.service');
 const ReportsService = require('./src/services/reports.service');
+const AdvisoryService = require('./src/services/advisory.service');
 const RouteService = require('./src/services/routeService');
+const ReputationService = require('./src/services/reputationService');
 const authService = new AuthService(userRepository, refreshTokenRepository, pool);
 const reportsService = new ReportsService(reportsRepository, userRepository);
+const advisoryService = new AdvisoryService(
+  new (require('./src/repositories/advisory.repository'))(pool),
+  userRepository
+);
 const routeService = new RouteService();
 
 // Initialize controllers
 const AuthController = require('./src/controllers/auth.controller');
 const ReportsController = require('./src/controllers/reports.controller');
+const AdvisoryController = require('./src/controllers/advisory.controller');
 const RouteController = require('./src/controllers/routeController');
+const ModerationController = require('./src/controllers/moderation.controller');
 const authController = new AuthController(authService);
 const reportsController = new ReportsController(reportsService);
+const advisoryController = new AdvisoryController(advisoryService);
 const routeController = new RouteController();
+const moderationController = new ModerationController(reportsService, new ReputationService(userRepository, reportsRepository));
 
 // Initialize route sets
 const { router: authRouter, setController: setAuthController } = require('./src/routes/auth.routes');
 const { router: reportsRouter, setController: setReportsController } = require('./src/routes/reports.routes');
 const { router: routeRouter, setController: setRouteController } = require('./src/routes/route.routes');
+const { router: advisoryRouter, setController: setAdvisoryController, setAuthMiddleware: setAdvisoryAuthMiddleware } = require('./src/routes/advisory.routes');
+const { router: moderationRouter, setController: setModerationController } = require('./src/routes/moderation.routes');
 setAuthController(authController);
 setReportsController(reportsController);
 setRouteController(routeController);
+setAdvisoryController(advisoryController);
+setModerationController(moderationController);
 
 // Middleware for authentication
 const { authenticate } = require('./src/middleware/auth.middleware');
+const authMiddleware = authenticate(authService); // Create the middleware instance
+setAdvisoryAuthMiddleware(authMiddleware); // Set it in the advisory routes
 
 // Use routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/reports', reportsRouter);
 app.use('/api/v1/route', routeRouter);
+app.use('/api/v1/advisories', advisoryRouter);
+app.use('/api/v1/moderation', moderationRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -89,9 +120,6 @@ const server = app.listen(PORT, () => {
 
 // Initialize Socket.IO with secure CORS configuration
 const { Server } = require('socket.io');
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ["http://localhost:3000", "http://127.0.0.1:3000"]; // Default for development
 
 const io = new Server(server, {
   cors: {
@@ -120,8 +148,8 @@ setInterval(async () => {
 runDecaySweepJob(pool, io).catch(console.error);
 
 // Make io available to hazard channel
-const { HazardChannel } = require('./src/sockets/hazardChannel');
-const hazardChannel = new HazardChannel(io, reportsRepository);
+const HazardChannel = require('./src/sockets/hazardChannel');
+const hazardChannel = new HazardChannel(io, reportsRepository, new (require('./src/repositories/advisory.repository'))(pool));
 
 // Handle socket connections
 io.on('connection', (socket) => {
