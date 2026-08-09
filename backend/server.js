@@ -55,11 +55,13 @@ const ReportsController = require('./src/controllers/reports.controller');
 const AdvisoryController = require('./src/controllers/advisory.controller');
 const RouteController = require('./src/controllers/routeController');
 const ModerationController = require('./src/controllers/moderation.controller');
+const ResponderController = require('./src/controllers/responder.controller');
 const authController = new AuthController(authService);
 const reportsController = new ReportsController(reportsService);
 const advisoryController = new AdvisoryController(advisoryService);
 const routeController = new RouteController();
 const moderationController = new ModerationController(reportsService, new ReputationService(userRepository, reportsRepository));
+const responderController = new ResponderController(reportsService);
 
 // Initialize route sets
 const { router: authRouter, setController: setAuthController } = require('./src/routes/auth.routes');
@@ -67,11 +69,13 @@ const { router: reportsRouter, setController: setReportsController } = require('
 const { router: routeRouter, setController: setRouteController } = require('./src/routes/route.routes');
 const { router: advisoryRouter, setController: setAdvisoryController, setAuthMiddleware: setAdvisoryAuthMiddleware } = require('./src/routes/advisory.routes');
 const { router: moderationRouter, setController: setModerationController } = require('./src/routes/moderation.routes');
+const { router: responderRouter, setController: setResponderController } = require('./src/routes/responder.routes');
 setAuthController(authController);
 setReportsController(reportsController);
 setRouteController(routeController);
 setAdvisoryController(advisoryController);
 setModerationController(moderationController);
+setResponderController(responderController);
 
 // Middleware for authentication
 const { authenticate } = require('./src/middleware/auth.middleware');
@@ -84,6 +88,7 @@ app.use('/api/v1/reports', reportsRouter);
 app.use('/api/v1/route', routeRouter);
 app.use('/api/v1/advisories', advisoryRouter);
 app.use('/api/v1/moderation', moderationRouter);
+app.use('/api/v1/responder', responderRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
