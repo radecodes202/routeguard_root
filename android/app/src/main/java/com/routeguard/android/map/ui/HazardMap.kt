@@ -134,10 +134,15 @@ fun HazardMap(
         frameLayout.addView(mapView)
         addView(frameLayout)
 
-        // Initialize map
+        // Initialize map with custom style URL for self-hosted tiles or open provider
         DisposableEffect(Unit) {
             mapView.getMapAsync { mapboxMap ->
-                mapboxMap?.loadStyleUri(Style.STANDARD) { style ->
+                // Use string resources for API keys and style URLs
+                val apiKey = context.getString(R.string.maptiler_api_key)
+                val styleUrlFormat = context.getString(R.string.maptiler_streets_style_url)
+                val styleUrl = String.format(styleUrlFormat, apiKey)
+
+                mapboxMap?.loadStyleUri(styleUrl) { style ->
                     // Style loaded successfully
                     // Add any custom style configurations here
                 }

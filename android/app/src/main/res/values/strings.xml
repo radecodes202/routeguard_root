@@ -5,7 +5,7 @@
     <!-- Generic actions -->
     <string name="cancel">Cancel</string>
     <string name="close">Close</string>
-    <string name="login">Login</string
+    <string name="login">Login</string>
     <string name="report">Report</string>
     <string name="retry">Retry</string>
 
@@ -26,6 +26,11 @@
     <!-- Map screen strings -->
     <string name="nearby_hazards">Nearby Hazards</string>
     <string name="km_away">km away</string>
+
+    <!-- MapLibre / MapTiler Configuration -->
+    <!-- Get your API key from https://cloud.maptiler.com/ -->
+    <string name="maptiler_api_key" translatable="false">YOUR_MAPTILER_API_KEY_HERE</string>
+    <string name="maptiler_streets_style_url">https://api.maptiler.com/maps/streets/style.json?key=%s</string>
 
     <!-- Existing strings from fragments (to maintain compatibility) -->
     <string name="hint_email">Email</string>

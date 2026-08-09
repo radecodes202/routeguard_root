@@ -31,8 +31,10 @@ object NetworkModule {
     fun provideRetrofit(
         okHttpClient: OkHttpClient
     ): Retrofit {
+        // Use buildConfigField for dynamic base URL based on build variant
+        val baseUrl = BuildConfig.BASE_URL
         return Retrofit.Builder()
-            .baseUrl("https://api.routeguard.example.com/") // Base URL - would be configured via build flavors or env vars
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -59,9 +61,10 @@ object NetworkModule {
     fun provideOsrmApi(
         okHttpClient: OkHttpClient
     ): com.routeguard.android.map.OsrmApi {
-        // For OSRM, we need a different base URL
+        // For OSRM, we need a different base URL - also using buildConfigField
+        val osrmUrl = BuildConfig.OSRM_URL
         val osrmRetrofit = Retrofit.Builder()
-            .baseUrl("http://router.project-osrm.org/") // Public OSRM demo server - would be configured via env vars
+            .baseUrl(osrmUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
