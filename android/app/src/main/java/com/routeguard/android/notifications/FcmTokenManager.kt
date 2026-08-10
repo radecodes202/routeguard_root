@@ -3,18 +3,26 @@ package com.routeguard.android.notifications
 import android.content.Context
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
-import com.routeguard.android.ui.auth.AuthViewModel
-import com.routeguard.android.di.ServiceLocator
-import dagger.hilt.android.AndroidEntryPoint
+import com.routeguard.android.data.AuthRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Manages FCM token retrieval and registration with backend
  */
-@AndroidEntryPoint
+@Singleton
 class FcmTokenManager @Inject constructor(
-    private val context: Context,
-    private val authViewModel: AuthViewModel
+    @ApplicationContext private val context: Context,
+    private val authRepository: AuthRepository
 ) {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "FcmTokenManager"
@@ -30,17 +38,15 @@ class FcmTokenManager @Inject constructor(
                 return@addOnCompleteListener
             }
 
-            // Get new FCM registration token
             val token = task.result
+            Log.d(TAG, "FCM Token: $token")
 
-            // Log and toast
-            val msg = "FCM Token: $token"
-            Log.d(TAG, msg)
-            // Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-
-            // Send token to backend if user is authenticated
-            // In a real app, you would check auth state first
-            authViewModel.registerFcmToken(token)
+            // Send token to backend via repository
+            scope.launch {
+                authRepository.registerFcmToken(token).collectLatest {
+                    // Result handled in repository or logged
+                }
+            }
         }
     }
 
@@ -48,9 +54,6 @@ class FcmTokenManager @Inject constructor(
      * Get current FCM token
      */
     fun getFcmToken(): String {
-        // This is a synchronous call that might block - in production you'd use the async version above
-        // For simplicity in this example, we'll return a placeholder
-        // In reality, you should use FirebaseMessaging.getInstance().token.addOnSuccessListener {...}
         return "PLACEHOLDER_FCM_TOKEN"
     }
 }

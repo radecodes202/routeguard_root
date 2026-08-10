@@ -5,10 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.routeguard.android.R
 import com.routeguard.android.databinding.FragmentForgotPasswordBinding
+import com.routeguard.android.ui.auth.AuthUiState
+import com.routeguard.android.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -34,7 +39,7 @@ class ForgotPasswordScreen : Fragment() {
     }
 
     private fun setupObservers() {
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+        viewLifecycleOwner.lifecycleScope.launch {
             authViewModel.uiState.collectLatest { state ->
                 when (state) {
                     is AuthUiState.ForgotPasswordLoading -> showLoading(true)
@@ -73,7 +78,7 @@ class ForgotPasswordScreen : Fragment() {
         if (isLoading) {
             binding.btnSendResetLink.text = getString(R.string.sending)
         } else {
-            binding.btnSendResetLink.text = getString(R.string.send_reset_link)
+            binding.btnSendResetLink.text = getString(R.string.action_send_reset_link)
         }
     }
 

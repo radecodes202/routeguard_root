@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeguard.android.data.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -14,84 +17,85 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     // UI State
-    val uiState = androidx.lifecycle.MutableStateFlow<AuthUiState>(AuthUiState.RegisterLoading)
+    private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.RegisterLoading)
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun register(email: String, phoneNumber: String?, fullName: String, password: String, passwordConfirmation: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.RegisterLoading
+            _uiState.value = AuthUiState.RegisterLoading
             authRepository.register(email, phoneNumber, fullName, password, passwordConfirmation)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.LoginLoading
+            _uiState.value = AuthUiState.LoginLoading
             authRepository.login(email, password)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun refreshToken(refreshToken: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.TokenRefreshLoading
+            _uiState.value = AuthUiState.TokenRefreshLoading
             authRepository.refreshToken(refreshToken)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun logout(refreshToken: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.LogoutLoading
+            _uiState.value = AuthUiState.LogoutLoading
             authRepository.logout(refreshToken)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun verifyEmail(token: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.EmailVerificationLoading
+            _uiState.value = AuthUiState.EmailVerificationLoading
             authRepository.verifyEmail(token)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun forgotPassword(email: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.ForgotPasswordLoading
+            _uiState.value = AuthUiState.ForgotPasswordLoading
             authRepository.forgotPassword(email)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun resetPassword(token: String, newPassword: String) {
         viewModelScope.launch {
-            uiState.value = AuthUiState.ResetPasswordLoading
+            _uiState.value = AuthUiState.ResetPasswordLoading
             authRepository.resetPassword(token, newPassword)
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            uiState.value = AuthUiState.CurrentUserLoading
+            _uiState.value = AuthUiState.CurrentUserLoading
             authRepository.getCurrentUser()
                 .collectLatest { state ->
-                    uiState.value = state
+                    _uiState.value = state
                 }
         }
     }

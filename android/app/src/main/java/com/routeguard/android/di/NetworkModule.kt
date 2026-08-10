@@ -1,5 +1,6 @@
 package com.routeguard.android.di
 
+import com.routeguard.android.BuildConfig
 import com.routeguard.android.data.remote.AuthApi
 import dagger.Module
 import dagger.Provides

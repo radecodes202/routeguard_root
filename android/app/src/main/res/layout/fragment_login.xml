@@ -38,7 +38,6 @@
             android:layout_marginBottom="16dp"
             android:hint="@string/hint_email"
             android:inputType="textEmailAddress"
-            android: autocompleteHintExclude="true"
             android:importantForAutofill="no" />
 
         <EditText
@@ -69,7 +68,7 @@
                 android:gravity="end"
                 android:text="@string/label_forgot_password"
                 android:id="@+id/btnForgotPassword"
-                android:textAppearance="?attr/textAppearanceSmall"
+                android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="?attr/colorControlNormal" />
 
         </LinearLayout>
@@ -87,9 +86,20 @@
             android:id="@+id/btnRegister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:text="@string/action_register"
             android:backgroundTint="?attr/colorPrimary"
             android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/btnBypass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/action_bypass_login"
+            android:textAlignment="center"
+            android:padding="8dp"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="italic" />
 
         <ProgressBar
             android:id="@+id/progressBar"

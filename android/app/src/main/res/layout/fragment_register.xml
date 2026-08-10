@@ -38,7 +38,6 @@
             android:layout_marginBottom="16dp"
             android:hint="@string/hint_email"
             android:inputType="textEmailAddress"
-            android:autoCompleteHintExclude="true"
             android:importantForAutofill="no" />
 
         <EditText

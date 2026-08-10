@@ -15,20 +15,30 @@ import com.routeguard.android.map.HazardMapper
 import com.routeguard.android.util.LocationUtils
 import com.routeguard.android.notifications.NotificationHelper
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.InjectedService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * Service that monitors user location and sends push notifications for nearby hazards
  * Triggers alerts when hazards are detected within 500m radius
  */
-@InjectedService
 @AndroidEntryPoint
-class HazardAlertService @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val reportsRepository: ReportsRepository,
-    private val locationManager: LocationManager
-) : Service() {
+class HazardAlertService : Service() {
+
+    @Inject
+    lateinit var authRepository: AuthRepository
+    
+    @Inject
+    lateinit var reportsRepository: ReportsRepository
+    
+    @Inject
+    lateinit var locationManager: LocationManager
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "HazardAlertService"
@@ -66,6 +76,7 @@ class HazardAlertService @Inject constructor(
         stopMonitoring()
         // Stop location updates
         locationManager.stopLocationUpdates()
+        serviceScope.cancel()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -79,10 +90,10 @@ class HazardAlertService @Inject constructor(
             override fun run() {
                 checkForNearbyHazards()
                 // Schedule next check
-                handler.postDelayed(this, CHECK_INTERVAL_MS)
+                handler.postDelayed(this, CHECK_INTERVAL_MS.toLong())
             }
         }
-        handler.postDelayed(alertTask!!, CHECK_INTERVAL_MS)
+        handler.postDelayed(alertTask!!, CHECK_INTERVAL_MS.toLong())
     }
 
     private fun stopMonitoring() {
@@ -101,7 +112,7 @@ class HazardAlertService @Inject constructor(
 
         // Fetch hazards within 5km (we'll filter to 500m locally for efficiency)
         // In production, you might want to adjust the backend query to use a smaller radius
-        androidx.lifecycle.viewModelScope.launch {
+        serviceScope.launch {
             try {
                 val hazards = reportsRepository.getNearbyHazards(
                     latitude = currentLocation.latitude,

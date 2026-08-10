@@ -1,122 +1,99 @@
 package com.routeguard.android.location
 
 import android.Manifest
-import android.app.Service
 import android.content.Context
 import android.location.Location
-import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.tasks.Task
+import com.google.android.gms.location.Priority
+import com.routeguard.android.util.AppConfig
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Manages location updates for the application
  */
+@Singleton
 class LocationManager @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
-
-    companion object {
-        private const val TAG = "LocationManager"
-        private const val LOCATION_UPDATE_INTERVAL = 10000L // 10 seconds
-        private const val FASTEST_UPDATE_INTERVAL = 5000L // 5 seconds
-    }
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
     private var locationCallback: LocationCallback? = null
     private var currentLocation: Location? = null
-    private val locationUpdateHandler = Handler(Looper.getMainLooper())
-    private var locationUpdateRunnable: Runnable? = null
 
-    /**
-     * Start location updates
-     */
-    fun startLocationUpdates() {
-        stopLocationUpdates() // Clean up any existing updates
-
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                onLocationChanged(locationResult.lastLocation)
+    init {
+        if (AppConfig.DEMO_MODE) {
+            // Set a default demo location (e.g., Tacloban City coordinates)
+            currentLocation = Location("demo").apply {
+                latitude = 11.2400
+                longitude = 125.0000
+                accuracy = 10.0f
+                time = System.currentTimeMillis()
             }
         }
+    }
+
+    fun startLocationUpdates() {
+        stopLocationUpdates()
+
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { onLocationChanged(it) }
+            }
+        }
+        locationCallback = callback
 
         val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, LOCATION_UPDATE_INTERVAL
-        )
-            .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(FASTEST_UPDATE_INTERVAL)
-            .build()
+            Priority.PRIORITY_HIGH_ACCURACY, 10000L
+        ).build()
 
-        // Check permissions before requesting updates
         if (hasLocationPermission()) {
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
+            try {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    callback,
+                    Looper.getMainLooper()
+                )
+            } catch (e: SecurityException) {
+                Log.e("LocationManager", "Permission error", e)
+            }
         }
-
-        // Also get initial location
-        getLastKnownLocation()
     }
 
-    /**
-     * Stop location updates
-     */
     fun stopLocationUpdates() {
-        locationCallback?.let { fusedLocationClient.removeUpdates(it) }
+        val callback = locationCallback
+        if (callback != null) {
+            fusedLocationClient.removeLocationUpdates(callback)
+        }
         locationCallback = null
-        locationUpdateRunnable?.let { locationUpdateHandler.removeCallbacks(it) }
-        locationUpdateRunnable = null
     }
 
-    /**
-     * Get the last known location
-     */
     suspend fun getLastKnownLocation(): Location? {
-        if (!hasLocationPermission()) {
-            Log.w(TAG, "Location permission not granted")
-            return null
-        }
-
-        return try {
-            fusedLocationClient.lastLocation
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Lost location permission.", e)
-            null
-        }
+        return currentLocation
     }
 
-    /**
-     * Get current location (updated via callbacks)
-     */
     fun getCurrentLocation(): Location? {
         return currentLocation
     }
 
-    /**
-     * Check if location permission is granted
-     */
-    private fun hasLocationPermission(): Boolean {
-        return android.content.ContextCompat.checkSelfPermission(
+    fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 
-    /**
-     * Handle location updates
-     */
     private fun onLocationChanged(location: Location) {
-        Log.d(TAG, "Location changed: ${location.latitude}, ${location.longitude}")
         currentLocation = location
     }
 }

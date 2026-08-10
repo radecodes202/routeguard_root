@@ -1,19 +1,64 @@
 package com.routeguard.android.data
 
 import android.net.Uri
+import com.routeguard.android.data.remote.ReportsApi
 import com.routeguard.android.data.remote.dto.HazardReportResponse
 import com.routeguard.android.data.remote.dto.HazardReportResponse.HazardReportData.HazardReport
 import com.routeguard.android.map.HazardMapper
-import okhttp3.MediaType
+import com.routeguard.android.util.AppConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
-import retrofit2.run
+import retrofit2.awaitResponse
 import java.io.File
 
 class ReportsRepository(
-    private val reportsApi: com.routeguard.android.data.remote.ReportsApi
+    private val reportsApi: ReportsApi
 ) {
+    // For demo mode state management
+    private val _hazards = MutableStateFlow<List<HazardMapper>>(emptyList())
+    val hazards: StateFlow<List<HazardMapper>> = _hazards.asStateFlow()
+
+    init {
+        if (AppConfig.DEMO_MODE) {
+            _hazards.value = listOf(
+                HazardMapper(
+                    id = "demo-h1",
+                    reporterId = "system",
+                    category = "flooded",
+                    description = "Road flooded due to heavy rain",
+                    status = HazardMapper.Status.CONFIRMED,
+                    confirmCount = 10,
+                    denyCount = 0,
+                    confidenceScore = 0.95,
+                    latitude = 11.2444,
+                    longitude = 125.0044,
+                    distance = 500.0,
+                    createdAt = "2026-08-10T00:00:00Z"
+                ),
+                HazardMapper(
+                    id = "demo-h2",
+                    reporterId = "system",
+                    category = "debris",
+                    description = "Fallen tree blocking lane",
+                    status = HazardMapper.Status.PENDING,
+                    confirmCount = 2,
+                    denyCount = 1,
+                    confidenceScore = 0.6,
+                    latitude = 11.2350,
+                    longitude = 124.9950,
+                    distance = 700.0,
+                    createdAt = "2026-08-10T00:05:00Z"
+                )
+            )
+        }
+    }
 
     suspend fun getNearbyHazards(
         latitude: Double,
@@ -24,23 +69,29 @@ class ReportsRepository(
         limit: Int? = 50,
         offset: Int? = 0
     ): List<HazardMapper> {
-        val response: Response<HazardReportResponse> = reportsApi.getNearbyReports(
-            lat = latitude,
-            lng = longitude,
-            radius = radius,
-            status = status,
-            category = category,
-            limit = limit,
-            offset = offset
-        ).execute()
-
-        if (response.isSuccessful && response.body()?.success == true && response.body()?.data != null) {
-            val hazardReports = response.body()!!.data.reports
-            return hazardReports.map { HazardMapper.fromApiResponse(it, latitude, longitude) }
-        } else {
-            // Return empty list on error - in a real app, we might want to throw or handle differently
-            return emptyList()
+        if (AppConfig.DEMO_MODE) {
+            return _hazards.value
         }
+
+        try {
+            val response: Response<HazardReportResponse> = reportsApi.getNearbyReports(
+                lat = latitude,
+                lng = longitude,
+                radius = radius,
+                status = status,
+                category = category,
+                limit = limit,
+                offset = offset
+            ).awaitResponse()
+
+            if (response.isSuccessful && response.body()?.success == true && response.body()?.data != null) {
+                val hazardReports = response.body()!!.data!!.reports
+                return hazardReports.map { HazardMapper.fromApiResponse(it, latitude, longitude) }
+            }
+        } catch (e: Exception) {
+            // Log error
+        }
+        return emptyList()
     }
 
     suspend fun createReport(
@@ -50,34 +101,65 @@ class ReportsRepository(
         longitude: Double,
         mediaUri: Uri? = null
     ): HazardReportResponse {
+        if (AppConfig.DEMO_MODE) {
+            val newHazard = HazardMapper(
+                id = "demo-new-${System.currentTimeMillis()}",
+                reporterId = "demo-123",
+                category = category,
+                description = description,
+                status = HazardMapper.Status.PENDING,
+                confirmCount = 0,
+                denyCount = 0,
+                confidenceScore = 0.5,
+                latitude = latitude,
+                longitude = longitude,
+                distance = 0.0,
+                createdAt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).format(java.util.Date())
+            )
+            _hazards.value = _hazards.value + newHazard
+
+            return HazardReportResponse(
+                success = true,
+                data = HazardReportResponse.HazardReportData(
+                    reports = listOf(
+                        HazardReport(
+                            id = newHazard.id,
+                            reporterId = newHazard.reporterId,
+                            category = newHazard.category,
+                            description = newHazard.description,
+                            locationWkt = "POINT($longitude $latitude)",
+                            status = "PENDING",
+                            confirmCount = 0,
+                            denyCount = 0,
+                            confidenceScore = 0.5,
+                            createdAt = newHazard.createdAt
+                        )
+                    ),
+                    total = 1,
+                    limit = 50,
+                    offset = 0
+                ),
+                error = null
+            )
+        }
+
         val location = "POINT($longitude $latitude)"
 
-        // If we have media, use multipart upload
         if (mediaUri != null) {
             return createReportWithMedia(category, description, latitude, longitude, mediaUri)
         }
 
-        // Otherwise use regular JSON upload (backward compatibility)
-        val reportRequest = com.routeguard.android.data.remote.ReportsApi.ReportRequest(
+        val reportRequest = ReportsApi.ReportRequest(
             category = category,
             description = description,
             location = location
         )
-        val response: Response<HazardReportResponse> = reportsApi.createReport(
-            reportRequest
-        ).execute()
-
-        if (response.isSuccessful && response.body() != null) {
-            return response.body()!!
-        } else {
-            // Return error response - in a real app, we might want to throw or handle differently
-            return HazardReportResponse(
-                success = false,
-                data = null,
-                error = HazardReportResponse.HazardReportError(
-                    message = "Failed to create report: ${response.code()}"
-                )
-            )
+        
+        return try {
+            val response = reportsApi.createReport(reportRequest).awaitResponse()
+            response.body() ?: HazardReportResponse(false, null, HazardReportResponse.HazardReportError("Empty response"))
+        } catch (e: Exception) {
+            HazardReportResponse(false, null, HazardReportResponse.HazardReportError(e.localizedMessage ?: "Network error"))
         }
     }
 
@@ -90,113 +172,32 @@ class ReportsRepository(
     ): HazardReportResponse {
         val location = "POINT($longitude $latitude)"
 
-        // Create request body parts
-        val categoryPart = RequestBody.create(
-            MediaType.parse("text/plain"),
-            category
-        )
-        val descriptionPart = description?.let {
-            RequestBody.create(
-                MediaType.parse("text/plain"),
-                it
-            )
-        }
-        val locationPart = RequestBody.create(
-            MediaType.parse("text/plain"),
-            location
-        )
+        val categoryPart = category.toRequestBody("text/plain".toMediaTypeOrNull())
+        val descriptionPart = description?.toRequestBody("text/plain".toMediaTypeOrNull())
+        val locationPart = location.toRequestBody("text/plain".toMediaTypeOrNull())
 
-        // Prepare media part if URI is valid
         var mediaPart: MultipartBody.Part? = null
-        if (mediaUri != null) {
-            try {
-                val file = File(mediaUri.path)
-                if (file.exists()) {
-                    val requestFile = RequestBody.create(
-                        MediaType.parse("image/*"),
-                        file
-                    )
-                    mediaPart = MultipartBody.Part.createFormData(
-                        "media",
-                        file.name,
-                        requestFile
-                    )
-                }
-            } catch (e: Exception) {
-                // If we can't create the media part, fallback to regular upload
-                val reportRequest = com.routeguard.android.data.remote.ReportsApi.ReportRequest(
-                    category = category,
-                    description = description,
-                    location = location
-                )
-                val response: Response<HazardReportResponse> = reportsApi.createReport(
-                    reportRequest
-                ).execute()
-
-                if (response.isSuccessful && response.body() != null) {
-                    return response.body()!!
-                } else {
-                    return HazardReportResponse(
-                        success = false,
-                        data = null,
-                        error = HazardReportResponse.HazardReportError(
-                            message = "Failed to create report: ${response.code()}"
-                        )
-                    )
-                }
+        try {
+            val file = File(mediaUri.path ?: "")
+            if (file.exists()) {
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                mediaPart = MultipartBody.Part.createFormData("media", file.name, requestFile)
             }
+        } catch (e: Exception) {
+            // Fallback to regular report if media fails
+            return createReport(category, description, latitude, longitude, null)
         }
 
-        // Make the multipart request
-        val response: Response<HazardReportResponse> = reportsApi.createReport(
-            categoryPart,
-            descriptionPart,
-            locationPart,
-            mediaPart
-        ).execute()
-
-        if (response.isSuccessful && response.body() != null) {
-            return response.body()!!
-        } else {
-            // Return error response
-            return HazardReportResponse(
-                success = false,
-                data = null,
-                error = HazardReportResponse.HazardReportError(
-                    message = "Failed to create report: ${response.code()}"
-                )
-            )
+        return try {
+            val response = reportsApi.createReport(
+                categoryPart,
+                descriptionPart,
+                locationPart,
+                mediaPart
+            ).awaitResponse()
+            response.body() ?: HazardReportResponse(false, null, HazardReportResponse.HazardReportError("Empty response"))
+        } catch (e: Exception) {
+            HazardReportResponse(false, null, HazardReportResponse.HazardReportError(e.localizedMessage ?: "Network error"))
         }
-    }
-
-    data class HazardReportResponse(
-        val success: Boolean,
-        val data: HazardReportData?,
-        val error: HazardReportError?
-    ) {
-        data class HazardReportData(
-            val reports: List<HazardReport>,
-            val total: Int,
-            val limit: Int,
-            val offset: Int
-        ) {
-            data class HazardReport(
-                val id: String,
-                val reporterId: String,
-                val category: String,
-                val description: String?,
-                val locationWkt: String,
-                val status: String,
-                val confirmCount: Int,
-                val denyCount: Int,
-                val confidenceScore: Double,
-                val createdAt: String
-            )
-        }
-
-        data class HazardReportError(
-            val message: String,
-            val details: Map<String, List<String>>? = null
-        )
     }
 }

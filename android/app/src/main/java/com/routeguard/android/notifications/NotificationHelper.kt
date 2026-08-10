@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import com.routeguard.android.R
 import com.routeguard.android.map.HazardMapper
 import com.routeguard.android.util.LocationUtils
-import com.routeguard.android.ui.auth.AuthUiState
+import java.util.Locale
 
 /**
  * Helper class for creating and managing notifications
@@ -44,10 +44,6 @@ object NotificationHelper {
 
     /**
      * Show a hazard proximity notification
-     * @param context Application context
-     * @param hazard The hazard to alert about
-     * @param userLatitude User's current latitude
-     * @param userLongitude User's current longitude
      */
     fun showHazardProximityNotification(
         context: Context,
@@ -84,13 +80,13 @@ object NotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, HAZARD_ALERT_CHANNEL_ID)
-            .setSmallIcon(getHazardIcon(hazard.category))
+            .setSmallIcon(HazardMapper.getIconForCategory(hazard.category))
             .setContentTitle("Hazard Alert!")
             .setContentText(
-                "${hazard.description?.take(30)}... ${(distance / 1000).format("%.1f")}km away"
+                "${hazard.description?.take(30)}... ${String.format(Locale.US, "%.1f", distance / 1000)}km away"
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALERT)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Dismiss", dismissPendingIntent)
@@ -101,14 +97,7 @@ object NotificationHelper {
         notificationManager.notify(hazard.hashCode(), notification)
     }
 
-    private fun getHazardIcon(category: String): Int {
-        return when (category) {
-            "flooded" -> R.drawable.ic_flood
-            "fully_blocked" -> R.drawable.ic_blocked
-            "debris" -> R.drawable.ic_debris
-            "accident" -> R.drawable.ic_accident
-            "partially_passable" -> R.drawable.ic_partially_blocked
-            else -> R.drawable.ic_hazard_unknown
-        }
+    fun createHazardAlertChannel(hazardAlertService: HazardAlertService) {
+        createHazardAlertChannel(hazardAlertService as Context)
     }
 }

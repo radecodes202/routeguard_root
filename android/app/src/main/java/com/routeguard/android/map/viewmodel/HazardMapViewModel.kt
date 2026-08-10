@@ -9,7 +9,10 @@ import com.routeguard.android.map.HazardMapper
 import com.routeguard.android.ui.auth.AuthUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,13 +27,13 @@ class HazardMapViewModel @Inject constructor(
 ) : ViewModel() {
 
     // UI State
-    private val _uiState = MutableStateFlow<AuthUiState.LoginSuccess>(
+    private val _uiState = MutableStateFlow<AuthUiState>(
         AuthUiState.LoginSuccess(
-            user = com.routeguard.android.ui.auth.AuthUiState.User(
-                id = "temp",
-                email = "temp@test.com",
-                fullName = "Test User",
-                role = "commuter",
+            user = AuthUiState.User(
+                id = "demo-123",
+                email = "demo@routeguard.com",
+                fullName = "Demo User",
+                role = "user",
                 reputationScore = 50.0,
                 isActive = true
             )
@@ -38,101 +41,54 @@ class HazardMapViewModel @Inject constructor(
     )
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    // Hazards data
-    private val _hazards = MutableStateFlow<List<HazardMapper>>(emptyList())
-    val hazards: StateFlow<List<HazardMapper>> = _hazards.asStateFlow()
-
-    // User location
-    private val _userLocation = MutableStateFlow<HazardMapper.UserLocation?>(null)
-    val userLocation: StateFlow<HazardMapper.UserLocation?> = _userLocation.asStateFlow()
-
-    init {
-        // Initialize with mock data for now
-        initializeMockData()
-    }
-
-    private fun initializeMockData() {
-        // In a real implementation, this would fetch from the backend
-        // For now, we'll create some mock hazards around a default location
-
-        val mockHazards = listOf(
-            HazardMapper(
-                id = "1",
-                reporterId = "user1",
-                category = "flooded",
-                description = "Severe flooding on Main St",
-                status = HazardMapper.Status.CONFIRMED,
-                confirmCount = 15,
-                denyCount = 2,
-                confidenceScore = 95.0,
-                latitude = 11.2444,
-                longitude = 125.0044,
-                distance = 320.0,
-                createdAt = "2026-08-07T10:00:00Z"
-            ),
-            HazardMapper(
-                id = "2",
-                reporterId = "user2",
-                category = "accident",
-                description = "Multi-vehicle accident on Highway 1",
-                status = HazardMapper.Status.FLAGGED,
-                confirmCount = 8,
-                denyCount = 12,
-                confidenceScore = 40.0,
-                latitude = 11.2500,
-                longitude = 125.0100,
-                distance = 1800.0,
-                createdAt = "2026-08-07T09:30:00Z"
-            ),
-            HazardMapper(
-                id = "3",
-                reporterId = "user3",
-                category = "debris",
-                description = "Fallen tree blocking lane",
-                status = HazardMapper.Status.PENDING,
-                confirmCount = 3,
-                denyCount = 1,
-                confidenceScore = 75.0,
-                latitude = 11.2380,
-                longitude = 124.9980,
-                distance = 850.0,
-                createdAt = "2026-08-07T09:45:00Z"
-            )
+    // Hazards data - Observe directly from repository
+    val hazards: StateFlow<List<HazardMapper>> = reportsRepository.hazards
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
         )
 
-        _hazards.value = mockHazards
-        _userLocation.value = HazardMapper.UserLocation(
+    // User location
+    private val _userLocation = MutableStateFlow<HazardMapper.UserLocation?>(
+        HazardMapper.UserLocation(
             latitude = 11.2400,
             longitude = 125.0000,
             accuracy = 10.0
         )
+    )
+    val userLocation: StateFlow<HazardMapper.UserLocation?> = _userLocation.asStateFlow()
+
+    // Selected location for reporting
+    private val _selectedLocation = MutableStateFlow<android.graphics.PointF?>(null)
+    val selectedLocation: StateFlow<android.graphics.PointF?> = _selectedLocation.asStateFlow()
+
+    fun onMapClick(latOffset: Float, lngOffset: Float) {
+        _selectedLocation.value = android.graphics.PointF(latOffset, lngOffset)
+    }
+
+    fun clearSelection() {
+        _selectedLocation.value = null
     }
 
     /**
      * Fetch nearby hazards from backend
-     * @param latitude User's latitude
-     * @param longitude User's longitude
-     * @param radius Search radius in meters (default 5000 for 5km)
      */
     fun fetchNearbyHazards(latitude: Double, longitude: Double, radius: Double = 5000.0) {
         viewModelScope.launch {
             try {
-                val hazardList = reportsRepository.getNearbyHazards(
+                reportsRepository.getNearbyHazards(
                     latitude = latitude,
                     longitude = longitude,
                     radius = radius
                 )
-                _hazards.value = hazardList
                 _userLocation.value = HazardMapper.UserLocation(
                     latitude = latitude,
                     longitude = longitude,
                     accuracy = 10.0
                 )
             } catch (e: Exception) {
-                // In a real app, we'd handle errors properly
-                e.printStackTrace()
-                // Fallback to mock data on error
-                initializeMockData()
+                // Ignore in demo mode
             }
         }
     }
@@ -151,13 +107,7 @@ class HazardMapViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Handle hazard click
-     * @param hazardId ID of clicked hazard
-     */
-    fun onHazardClicked(hazardId: String) {
-        // TODO: Navigate to hazard detail screen
-        // This would typically involve navigating to a detail screen
-        // with full hazard information and confirm/deny options
+    fun retryLogin() {
+        // Implementation
     }
 }

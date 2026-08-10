@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "495989447962",
+    "project_id": "com-routeguard-android",
+    "storage_bucket": "com-routeguard-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:495989447962:android:4791699f349ba6da2320a3",
+        "android_client_info": {
+          "package_name": "com.routeguard.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMrMc3ZBJ0K7US9e8uwVeAWpyxBkrXo2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,23 +1,25 @@
 package com.routeguard.android.di
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.routeguard.android.notifications.FcmTokenManager
-import com.routeguard.android.ui.auth.AuthViewModel
-import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.EntryPoint
+import dagger.hilt.EntryPoints
+import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Service Locator for accessing dependencies in non-Hilt managed classes
- * This is a temporary solution - ideally all classes would be Hilt-injected
  */
 @Singleton
-class ServiceLocator @Inject constructor(
-    private val singletonComponent: SingletonComponent
-) {
+class ServiceLocator @Inject constructor() {
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface ServiceLocatorEntryPoint {
+        fun fcmTokenManager(): FcmTokenManager
+    }
 
     private var applicationContext: Context? = null
 
@@ -25,21 +27,12 @@ class ServiceLocator @Inject constructor(
         applicationContext = context
     }
 
-    fun getApplicationContext(): Context {
-        return applicationContext ?: throw IllegalStateException("ServiceLocator not initialized")
-    }
-
-    fun <T : ViewModel> getViewModelProvider(
-        owner: androidx.lifecycle.ViewModelStoreOwner
-    ): ViewModelProvider {
-        return ViewModelProvider(owner)
+    private fun getEntryPoint(): ServiceLocatorEntryPoint {
+        val context = applicationContext ?: throw IllegalStateException("ServiceLocator not initialized")
+        return EntryPoints.get(context, ServiceLocatorEntryPoint::class.java)
     }
 
     fun getFcmTokenManager(): FcmTokenManager {
-        return singletonComponent.fcmTokenManager()
-    }
-
-    fun getAuthViewModel(): AuthViewModel {
-        return singletonComponent.authViewModel()
+        return getEntryPoint().fcmTokenManager()
     }
 }

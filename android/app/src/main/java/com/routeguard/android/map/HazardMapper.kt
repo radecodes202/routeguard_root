@@ -1,6 +1,7 @@
 // map/HazardMapper.kt
 package com.routeguard.android.map
 
+import com.routeguard.android.R
 import com.routeguard.android.data.remote.dto.HazardReportResponse
 
 /**
@@ -26,20 +27,23 @@ data class HazardMapper(
         PENDING, FLAGGED, CONFIRMED, FALSE, INCONCLUSIVE
     }
 
+    data class UserLocation(
+        val latitude: Double,
+        val longitude: Double,
+        val accuracy: Double
+    )
+
     /**
-     * Create HazardMapper from API response
-     * @param apiResponse Response from backend
-     * @param userLat User's latitude for distance calculation
-     * @param userLng User's longitude for distance calculation
+     * Create HazardMapper from API response report
      */
     companion object {
         fun fromApiResponse(
-            apiResponse: HazardReportResponse,
+            apiReport: HazardReportResponse.HazardReportData.HazardReport,
             userLat: Double = 0.0,
             userLng: Double = 0.0
         ): HazardMapper {
             // Parse location from WKT format: POINT(longitude latitude)
-            val coords = parseLocation(apiResponse.location)
+            val coords = parseLocation(apiReport.locationWkt)
             val lat = coords?.latitude ?: 0.0
             val lng = coords?.longitude ?: 0.0
 
@@ -51,18 +55,22 @@ data class HazardMapper(
             }
 
             return HazardMapper(
-                id = apiResponse.id,
-                reporterId = apiResponse.reporterId,
-                category = apiResponse.category,
-                description = apiResponse.description,
-                status = Status.valueOf(apiResponse.status.uppercase()),
-                confirmCount = apiResponse.confirmCount,
-                denyCount = apiResponse.denyCount,
-                confidenceScore = apiResponse.confidenceScore,
+                id = apiReport.id,
+                reporterId = apiReport.reporterId,
+                category = apiReport.category,
+                description = apiReport.description,
+                status = try {
+                    Status.valueOf(apiReport.status.uppercase())
+                } catch (e: Exception) {
+                    Status.PENDING
+                },
+                confirmCount = apiReport.confirmCount,
+                denyCount = apiReport.denyCount,
+                confidenceScore = apiReport.confidenceScore,
                 latitude = lat,
                 longitude = lng,
                 distance = distance,
-                createdAt = apiResponse.createdAt
+                createdAt = apiReport.createdAt
             )
         }
 
@@ -70,16 +78,16 @@ data class HazardMapper(
             if (locationWkt == null || !locationWkt.startsWith("POINT(")) return null
 
             // Extract coordinates from POINT(lng lat)
-            val match = """\((-?\d+\.?\d*)\s+(-?\d+\.?\d*)\)""".toRegex().match(locationWkt)
-            if (match == null) return null
+            val matchResult = """POINT\((-?\d+\.?\d*)\s+(-?\d+\.?\d*)\)""".toRegex().find(locationWkt)
+            if (matchResult == null) return null
 
-            val lng = match.groupValues[1].toDoubleOrNull() ?: return null
-            val lat = match.groupValues[2].toDoubleOrNull() ?: return null
+            val lng = matchResult.groupValues[1].toDoubleOrNull() ?: return null
+            val lat = matchResult.groupValues[2].toDoubleOrNull() ?: return null
 
             return LatLng(lat, lng)
         }
 
-        private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
             // Haversine formula for distance calculation
             val R = 6371000.0 // Earth's radius in meters
             val φ1 = Math.toRadians(lat1)
@@ -97,33 +105,33 @@ data class HazardMapper(
 
         /** Simple data class for holding lat/lng */
         private data class LatLng(val latitude: Double, val longitude: Double)
-    }
 
-    /**
-     * Get icon resource for hazard category
-     */
-    fun getIconForCategory(): Int {
-        return when (category) {
-            "flooded" -> R.drawable.ic_flood
-            "fully_blocked" -> R.drawable.ic_blocked
-            "debris" -> R.drawable.ic_debris
-            "accident" -> R.drawable.ic_accident
-            "partially_passable" -> R.drawable.ic_partially_blocked
-            else -> R.drawable.ic_hazard_unknown
+        /**
+         * Get icon resource for hazard category
+         */
+        fun getIconForCategory(category: String): Int {
+            return when (category) {
+                "flooded" -> R.drawable.ic_flood
+                "fully_blocked" -> R.drawable.ic_blocked
+                "debris" -> R.drawable.ic_debris
+                "accident" -> R.drawable.ic_accident
+                "partially_passable" -> R.drawable.ic_partially_blocked
+                else -> R.drawable.ic_hazard_unknown
+            }
         }
-    }
 
-    /**
-     * Get color resource for hazard category
-     */
-    fun getColorForCategory(): Int {
-        return when (category) {
-            "flooded" -> R.color.hazard_flooded
-            "fully_blocked" -> R.color.hazard_blocked
-            "debris" -> R.color.hazard_debris
-            "accident" -> R.color.hazard_accident
-            "partially_passable" -> R.color.hazard_partially
-            else -> R.color.hazard_unknown
+        /**
+         * Get color resource for hazard category
+         */
+        fun getColorForCategory(category: String): Int {
+            return when (category) {
+                "flooded" -> R.color.hazard_flooded
+                "fully_blocked" -> R.color.hazard_blocked
+                "debris" -> R.color.hazard_debris
+                "accident" -> R.color.hazard_accident
+                "partially_passable" -> R.color.hazard_partially
+                else -> R.color.hazard_unknown
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 package com.routeguard.android.map
 
-import com.routeguard.android.map.HazardMapper
+import com.routeguard.android.util.AppConfig
 import retrofit2.Response
-import retrofit2.run
+import retrofit2.awaitResponse
 
 /**
  * Repository for OSRM service operations
@@ -18,21 +18,31 @@ class OsrmRepository(
         endLongitude: Double,
         alternatives: Boolean = false
     ): OsrmRouteResponse {
-        val coordinates = "${startLongitude},${startLatitude};${endLongitude},${endLatitude}"
-        val response: Response<OsrmRouteResponse> = osrmApi.getRoute(
-            alternatives = if (alternatives) "true" else "false",
-            coordinates = coordinates
-        ).execute()
-
-        if (response.isSuccessful && response.body() != null && response.body()!!.code == "Ok") {
-            return response.body()!!
-        } else {
-            // Return an error response - in a real implementation, we might want to throw or handle differently
+        if (AppConfig.DEMO_MODE) {
             return OsrmRouteResponse(
-                code = "Error",
-                routes = emptyList(),
+                code = "Ok",
+                routes = listOf(
+                    OsrmRouteResponse.OsrmRoute(
+                        geometry = "mj`yE_v|u@??", // Mock geometry
+                        legs = emptyList(),
+                        distance = 1500.0,
+                        duration = 300.0,
+                        weight = 300.0
+                    )
+                ),
                 waypoints = emptyList()
             )
+        }
+
+        val coordinates = "${startLongitude},${startLatitude};${endLongitude},${endLatitude}"
+        return try {
+            val response = osrmApi.getRoute(
+                alternatives = if (alternatives) "true" else "false",
+                coordinates = coordinates
+            ).awaitResponse()
+            response.body() ?: OsrmRouteResponse("Error", emptyList(), emptyList())
+        } catch (e: Exception) {
+            OsrmRouteResponse("Error", emptyList(), emptyList())
         }
     }
 
@@ -43,31 +53,31 @@ class OsrmRepository(
         endLongitude: Double,
         hazards: List<HazardMapper> = emptyList()
     ): OsrmRouteResponse {
-        // For Phase 1, we'll just call the regular route method
-        // In a full implementation, we would use OSRM's barrier feature to avoid hazards
-        // This would involve converting hazards to barrier coordinates and adding them to the request
+        // In demo mode, just return the regular mock route
         return getRoute(startLatitude, startLongitude, endLatitude, endLongitude)
     }
 
     suspend fun getDistanceMatrix(
         points: List<Pair<Double, Double>> // List of latitude, longitude pairs
     ): OsrmTableResponse {
-        val coordinates = points.map { (lat, lng) -> "$lng,$lat" }.joinToString(";")
-        val response: Response<OsrmTableResponse> = osrmApi.getTable(
-            coordinates = coordinates
-        ).execute()
-
-        if (response.isSuccessful && response.body() != null && response.body()!!.code == "Ok") {
-            return response.body()!!
-        } else {
-            // Return an error response
+        if (AppConfig.DEMO_MODE) {
             return OsrmTableResponse(
-                code = "Error",
-                distances = emptyList(),
-                durations = emptyList(),
+                code = "Ok",
+                distances = List(points.size) { List(points.size) { 100.0 } },
+                durations = List(points.size) { List(points.size) { 60.0 } },
                 sources = emptyList(),
                 destinations = emptyList()
             )
+        }
+
+        val coordinates = points.map { (lat, lng) -> "$lng,$lat" }.joinToString(";")
+        return try {
+            val response = osrmApi.getTable(
+                coordinates = coordinates
+            ).awaitResponse()
+            response.body() ?: OsrmTableResponse("Error", emptyList(), emptyList(), emptyList(), emptyList())
+        } catch (e: Exception) {
+            OsrmTableResponse("Error", emptyList(), emptyList(), emptyList(), emptyList())
         }
     }
 }

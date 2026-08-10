@@ -1,14 +1,20 @@
 package com.routeguard.android.auth.ui
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.routeguard.android.R
 import com.routeguard.android.databinding.FragmentResetPasswordBinding
+import com.routeguard.android.ui.auth.AuthUiState
+import com.routeguard.android.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -34,7 +40,7 @@ class ResetPasswordScreen : Fragment() {
     }
 
     private fun setupObservers() {
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+        viewLifecycleOwner.lifecycleScope.launch {
             authViewModel.uiState.collectLatest { state ->
                 when (state) {
                     is AuthUiState.ResetPasswordLoading -> showLoading(true)
@@ -73,35 +79,11 @@ class ResetPasswordScreen : Fragment() {
 
         // Password toggle functionality
         binding.ivTogglePassword.setOnClickListener {
-            val isChecked = !binding.etPassword.isFocused
-            binding.etPassword.isFocused = isChecked
-            binding.etPassword.setSelection(binding.etPassword.text?.length ?: 0)
-            // Toggle password visibility
-            binding.etPassword.transformationMethod = if (isChecked) {
-                android.text.method.HideReturnsTransformationMethod.getInstance()
-            } else {
-                android.text.method.PasswordTransformationMethod.getInstance()
-            }
-            // Toggle icon
-            binding.ivTogglePassword.setImageResource(
-                if (isChecked) R.drawable.ic_eye else R.drawable.ic_eye_off
-            )
+            togglePasswordVisibility(binding.etPassword, binding.ivTogglePassword)
         }
 
         binding.ivTogglePasswordConfirm.setOnClickListener {
-            val isChecked = !binding.etPasswordConfirm.isFocused
-            binding.etPasswordConfirm.isFocused = isChecked
-            binding.etPasswordConfirm.setSelection(binding.etPasswordConfirm.text?.length ?: 0)
-            // Toggle password visibility
-            binding.etPasswordConfirm.transformationMethod = if (isChecked) {
-                android.text.method.HideReturnsTransformationMethod.getInstance()
-            } else {
-                android.text.method.PasswordTransformationMethod.getInstance()
-            }
-            // Toggle icon
-            binding.ivTogglePasswordConfirm.setImageResource(
-                if (isChecked) R.drawable.ic_eye else R.drawable.ic_eye_off
-            )
+            togglePasswordVisibility(binding.etPasswordConfirm, binding.ivTogglePasswordConfirm)
         }
     }
 
@@ -111,7 +93,7 @@ class ResetPasswordScreen : Fragment() {
         if (isLoading) {
             binding.btnResetPassword.text = getString(R.string.resetting)
         } else {
-            binding.btnResetPassword.text = getString(R.string.reset_password)
+            binding.btnResetPassword.text = getString(R.string.action_reset_password)
         }
     }
 
@@ -125,6 +107,21 @@ class ResetPasswordScreen : Fragment() {
     private fun onResetPasswordError(message: String) {
         showLoading(false)
         Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+    }
+
+    private fun togglePasswordVisibility(editText: android.widget.EditText, imageView: android.widget.ImageView) {
+        val isPasswordVisible = editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
+        editText.inputType = if (isPasswordVisible) {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        } else {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        // Move cursor to the end
+        editText.setSelection(editText.text?.length ?: 0)
+        // Toggle icon
+        imageView.setImageResource(
+            if (isPasswordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye
+        )
     }
 
     override fun onDestroyView() {

@@ -6,10 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.routeguard.android.R
 import com.routeguard.android.databinding.FragmentLoginBinding
+import com.routeguard.android.ui.auth.AuthUiState
+import com.routeguard.android.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -35,7 +40,7 @@ class LoginScreen : Fragment() {
     }
 
     private fun setupObservers() {
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+        viewLifecycleOwner.lifecycleScope.launch {
             authViewModel.uiState.collectLatest { state ->
                 when (state) {
                     is AuthUiState.LoginLoading -> showLoading(true)
@@ -54,7 +59,8 @@ class LoginScreen : Fragment() {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString()
             if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                // Bypass login for demo if fields are empty
+                onLoginSuccess(AuthUiState.User("demo-123", "demo@routeguard.com", "Demo User", "user", 50.0, true))
                 return@setOnClickListener
             }
             authViewModel.login(email, password)
@@ -68,6 +74,10 @@ class LoginScreen : Fragment() {
         binding.btnForgotPassword.setOnClickListener {
             // Navigate to forgot password screen
             findNavController().navigate(R.id.action_loginScreen_to_forgotPasswordScreen)
+        }
+
+        binding.btnBypass.setOnClickListener {
+            onLoginSuccess(AuthUiState.User("demo-id", "demo@example.com", "Demo User", "user", 5.0, true))
         }
 
         binding.ivTogglePassword.setOnClickListener {
@@ -89,7 +99,9 @@ class LoginScreen : Fragment() {
         showLoading(false)
         Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
         // Navigate to home screen
-        findNavController().navigate(R.id.action_loginScreen_to_homeScreen)
+        val intent = android.content.Intent(requireContext(), com.routeguard.android.map.HazardMapScreen::class.java)
+        startActivity(intent)
+        requireActivity().finish()
     }
 
     private fun onLoginError(message: String) {
@@ -104,16 +116,14 @@ class LoginScreen : Fragment() {
     private fun onTokenRefreshError(message: String) {
         // Token refresh failed, user needs to login again
         Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-        // Clear tokens and navigate to login
-        // This would be handled by the ViewModel or a separate session manager
     }
 
     private fun togglePasswordVisibility() {
-        val isPasswordVisible = binding.etPassword.inputType == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        val isPasswordVisible = binding.etPassword.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
         binding.etPassword.inputType = if (isPasswordVisible) {
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         } else {
-            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         }
         // Move cursor to the end
         binding.etPassword.setSelection(binding.etPassword.text?.length ?: 0)

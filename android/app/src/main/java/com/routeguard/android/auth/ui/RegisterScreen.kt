@@ -6,10 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.routeguard.android.R
 import com.routeguard.android.databinding.FragmentRegisterBinding
+import com.routeguard.android.ui.auth.AuthUiState
+import com.routeguard.android.ui.auth.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -35,7 +40,7 @@ class RegisterScreen : Fragment() {
     }
 
     private fun setupObservers() {
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+        viewLifecycleOwner.lifecycleScope.launch {
             authViewModel.uiState.collectLatest { state ->
                 when (state) {
                     is AuthUiState.RegisterLoading -> showLoading(true)
@@ -95,7 +100,7 @@ class RegisterScreen : Fragment() {
         if (isLoading) {
             binding.btnRegister.text = getString(R.string.registering)
         } else {
-            binding.btnRegister.text = getString(R.string.register)
+            binding.btnRegister.text = getString(R.string.action_register)
         }
     }
 
@@ -112,11 +117,11 @@ class RegisterScreen : Fragment() {
     }
 
     private fun togglePasswordVisibility(editText: android.widget.EditText, imageView: android.widget.ImageView) {
-        val isPasswordVisible = editText.inputType == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        val isPasswordVisible = editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
         editText.inputType = if (isPasswordVisible) {
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         } else {
-            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         }
         // Move cursor to the end
         editText.setSelection(editText.text?.length ?: 0)

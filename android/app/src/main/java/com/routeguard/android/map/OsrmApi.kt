@@ -56,7 +56,7 @@ data class OsrmRouteResponse(
                     val bearing_before: Double,
                     val location: List<Double>,
                     val modifier: String?,
-                    val r#type: String,
+                    val type: String,
                     val instruction: String?
                 )
             }
@@ -75,6 +75,6 @@ data class OsrmTableResponse(
     val code: String,
     val distances: List<List<Double>>,
     val durations: List<List<Double>>,
-    val sources: List<OsrmWaypoint>,
-    val destinations: List<OsrmWaypoint>
+    val sources: List<OsrmRouteResponse.OsrmWaypoint>,
+    val destinations: List<OsrmRouteResponse.OsrmWaypoint>
 )

@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
+        android:name=".RouteGuardApplication"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -34,6 +35,37 @@
         <receiver
             android:name=".notifications.HazardAlertDismissReceiver"
             android:exported="false"/>
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RouteGuard">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".map.HazardMapScreen"
+            android:exported="false"
+            android:theme="@style/Theme.RouteGuard" />
+
+        <activity
+            android:name=".notifications.NotificationScreen"
+            android:exported="false"
+            android:theme="@style/Theme.RouteGuard" />
+
+        <activity
+            android:name=".map.HazardDetailScreen"
+            android:exported="false"
+            android:theme="@style/Theme.RouteGuard" />
+
+        <activity
+            android:name=".report.ReportBottomSheet"
+            android:exported="false"
+            android:theme="@style/Theme.RouteGuard"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

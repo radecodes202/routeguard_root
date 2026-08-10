@@ -40,4 +40,26 @@
     <string name="action_sign_in_short">Sign in</string>
     <string name="action_register">Register</string>
     <string name="content_description_toggle_password">Toggle password visibility</string>
+
+    <!-- Missing strings -->
+    <string name="action_send_reset_link">Send Reset Link</string>
+    <string name="label_back_to_login">Back to Login</string>
+    <string name="hint_phone">Phone Number</string>
+    <string name="hint_full_name">Full Name</string>
+    <string name="hint_password_confirm">Confirm Password</string>
+    <string name="action_sign_in">Sign In</string>
+    <string name="label_reset_password">Reset Password</string>
+    <string name="hint_reset_token">Reset Token</string>
+    <string name="hint_new_password">New Password</string>
+    <string name="action_reset_password">Reset Password</string>
+    <string name="label_verify_email">Verify Your Email</string>
+    <string name="hint_verification_code">Verification Code</string>
+    <string name="action_verify">Verify</string>
+    <string name="action_resend_code">Resend Code</string>
+    <string name="sending">Sending...</string>
+    <string name="logging_in">Logging in...</string>
+    <string name="registering">Registering...</string>
+    <string name="verifying">Verifying...</string>
+    <string name="resetting">Resetting...</string>
+    <string name="action_bypass_login">Bypass Login (Demo)</string>
 </resources>

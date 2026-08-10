@@ -1,14 +1,11 @@
 package com.routeguard.android.ui
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.navGraphViewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.routeguard.android.R
-import com.routeguard.android.di.ViewModelFactory
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

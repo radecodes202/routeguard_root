@@ -3,6 +3,7 @@ package com.routeguard.android.data.remote
 import com.routeguard.android.data.remote.dto.AuthResponse
 import com.routeguard.android.data.remote.dto.ForgotPasswordRequest
 import com.routeguard.android.data.remote.dto.LoginRequest
+import com.routeguard.android.data.remote.dto.RegisterFcmTokenRequest
 import com.routeguard.android.data.remote.dto.RegisterRequest
 import com.routeguard.android.data.remote.dto.ResetPasswordRequest
 import com.routeguard.android.data.remote.dto.TokenRefreshRequest

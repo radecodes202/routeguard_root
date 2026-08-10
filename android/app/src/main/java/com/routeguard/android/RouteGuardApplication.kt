@@ -5,14 +5,16 @@ import com.routeguard.android.di.ServiceLocator
 import com.routeguard.android.notifications.FcmTokenManager
 import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
-import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 
 @HiltAndroidApp
-class RouteGuardApplication @Inject constructor(
-    private val fcmTokenManager: FcmTokenManager,
-    private val serviceLocator: ServiceLocator
-) : Application() {
+class RouteGuardApplication : Application() {
+
+    @Inject
+    lateinit var fcmTokenManager: FcmTokenManager
+    
+    @Inject
+    lateinit var serviceLocator: ServiceLocator
 
     override fun onCreate() {
         super.onCreate()
